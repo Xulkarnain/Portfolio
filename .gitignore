@@ -1,0 +1,8 @@
+portenv
+.env
+Plan
+.env
+portenv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
