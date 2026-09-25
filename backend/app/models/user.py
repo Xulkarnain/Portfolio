@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import BigInteger, String, Text, func
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column , relationship
 
 from app.database.base import Base
 
@@ -48,4 +48,34 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(
         nullable=False,
         server_default=func.now(),
+    )
+
+    projects: Mapped[list["Project"]] = relationship(
+        "Project",
+        back_populates="owner",
+    )
+
+    experiences: Mapped[list["Experience"]] = relationship(
+        "Experience",
+        back_populates="owner",
+    )
+
+    education: Mapped[list["Education"]] = relationship(
+        "Education",
+        back_populates="owner",
+    )
+
+    certifications: Mapped[list["Certification"]] = relationship(
+        "Certification",
+        back_populates="owner",
+    )
+
+    posts: Mapped[list["Post"]] = relationship(
+        "Post",
+        back_populates="owner",
+    )
+
+    resumes: Mapped[list["Resume"]] = relationship(
+        "Resume",
+        back_populates="owner",
     )

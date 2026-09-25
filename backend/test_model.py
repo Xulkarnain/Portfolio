@@ -1,13 +1,13 @@
 from app.database.base import Base
-from app.models import Project, User
+from app.models import SyncLog
 
 
-print("User table:", User.__tablename__)
-print("Project table:", Project.__tablename__)
+print("Registered tables:")
+print(Base.metadata.tables.keys())
 
-print("\nProject columns:")
+print("\nSyncLog columns:")
 
-for column in Project.__table__.columns:
+for column in SyncLog.__table__.columns:
     print(
         column.name,
         "->",
@@ -16,5 +16,7 @@ for column in Project.__table__.columns:
         column.nullable,
     )
 
-print("\nRegistered tables:")
-print(Base.metadata.tables.keys())
+print("\nSyncLog constraints:")
+
+for constraint in SyncLog.__table__.constraints:
+    print(constraint)

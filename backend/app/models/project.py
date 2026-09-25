@@ -14,8 +14,7 @@ class Project(Base):
         primary_key=True,
     )
 
-    owner_id: 
-    Mapped[int] = mapped_column(
+    owner_id: Mapped[int] = mapped_column(
         BigInteger,
         ForeignKey("users.id", ondelete="RESTRICT", onupdate="CASCADE"),
         nullable=False,
@@ -25,6 +24,7 @@ class Project(Base):
         "User",
         back_populates="projects",
     )
+    
 
     title: Mapped[str] = mapped_column(
         String(150),
@@ -83,4 +83,10 @@ class Project(Base):
     updated_at: Mapped[datetime] = mapped_column(
         nullable=False,
         server_default=func.now(),
+    )
+
+    skills: Mapped[list["Skill"]] = relationship(
+        "Skill",
+        secondary="project_skills",
+        back_populates="projects",
     )
