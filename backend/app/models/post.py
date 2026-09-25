@@ -8,6 +8,7 @@ from sqlalchemy import (
     Text,
     UniqueConstraint,
     func,
+    DateTime
 )
 from sqlalchemy.orm import Mapped, mapped_column , relationship 
 
@@ -79,15 +80,18 @@ class Post(Base):
     )
 
     published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
 
     updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )

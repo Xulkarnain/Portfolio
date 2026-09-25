@@ -8,6 +8,7 @@ from sqlalchemy import (
     String,
     Text,
     func,
+    DateTime
 )
 from sqlalchemy.orm import Mapped, mapped_column , relationship 
 
@@ -88,13 +89,21 @@ class Experience(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
 
     updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+    skills: Mapped[list["Skill"]] = relationship(
+        "Skill",
+        secondary="experience_skills",
+        back_populates="experiences",
     )
 
     __table_args__ = (

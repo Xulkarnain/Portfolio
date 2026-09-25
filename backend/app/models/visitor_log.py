@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import String, Text, func
+from sqlalchemy import String, Text, func , BigInteger , DateTime , Index
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -10,6 +10,7 @@ class VisitorLog(Base):
     __tablename__ = "visitor_logs"
 
     id: Mapped[int] = mapped_column(
+        BigInteger,
         primary_key=True
     )
 
@@ -49,6 +50,14 @@ class VisitorLog(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+    __table_args__ = (
+        Index(
+            "idx_visitor_logs_created_at",
+            "created_at",
+        ),
     )

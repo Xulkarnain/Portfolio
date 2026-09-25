@@ -1,6 +1,15 @@
 from datetime import datetime
 
-from sqlalchemy import Boolean, String, Text, func
+from sqlalchemy import (
+    BigInteger,
+    DateTime,
+    Index,
+    String,
+    Text,
+    Boolean,    
+    func,
+    desc,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -10,6 +19,7 @@ class ContactMessage(Base):
     __tablename__ = "contact_messages"
 
     id: Mapped[int] = mapped_column(
+        BigInteger,
         primary_key=True
     )
 
@@ -40,6 +50,15 @@ class ContactMessage(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+    __table_args__ = (
+        Index(
+            "idx_contact_messages_read_created",
+            "is_read",
+            desc("created_at"),
+        ),
     )

@@ -6,7 +6,9 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    UniqueConstraint,
     func,
+    DateTime
 )
 from sqlalchemy.orm import Mapped, mapped_column , relationship
 
@@ -59,13 +61,21 @@ class Skill(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
 
     updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
+    )
+
+    experiences: Mapped[list["Experience"]] = relationship(
+        "Experience",
+        secondary="experience_skills",
+        back_populates="skills",
     )
 
     __table_args__ = (
@@ -73,5 +83,10 @@ class Skill(Base):
             "proficiency_level IN "
             "('beginner', 'intermediate', 'advanced', 'expert')",
             name="chk_skills_proficiency_level",
+        ),
+        UniqueConstraint(
+            "skill_category_id",
+            "name",
+            name="uq_skills_category_name",
         ),
     )

@@ -2,7 +2,7 @@ from datetime import datetime
 
 from sqlalchemy import Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import CheckConstraint, Integer, String, Text, func
+from sqlalchemy import CheckConstraint, Integer, String, Text, func , BigInteger ,DateTime , Index , desc
 from app.database.base import Base
 
 
@@ -10,6 +10,7 @@ class SyncLog(Base):
     __tablename__ = "sync_logs"
 
     id: Mapped[int] = mapped_column(
+        BigInteger,
         primary_key=True
     )
 
@@ -24,11 +25,13 @@ class SyncLog(Base):
     )
 
     started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
 
     completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
         nullable=True,
     )
 
@@ -78,5 +81,13 @@ class SyncLog(Base):
             AND records_failed >= 0
             """,
             name="chk_sync_logs_counts",
+        ),
+    )
+
+    __table_args__ = (
+        Index(
+            "idx_sync_logs_source_started",
+            "source",
+            desc("started_at"),
         ),
     )

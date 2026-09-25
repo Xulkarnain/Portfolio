@@ -6,7 +6,9 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     String,
+    UniqueConstraint,
     func,
+    DateTime
 )
 from sqlalchemy.orm import Mapped, mapped_column ,relationship
 
@@ -53,21 +55,29 @@ class Resume(Base):
     )
 
     uploaded_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
 
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
 
     updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
         server_default=func.now(),
     )
 
     __table_args__ = (
+        UniqueConstraint(
+            "owner_id",
+            "version",
+            name="uq_resumes_owner_version",
+        ),
         Index(
             "uq_resumes_one_current_per_owner",
             "owner_id",
