@@ -50,6 +50,9 @@ def test_get_projects():
 
         data = response.json()
 
+        assert "owner_id" not in data[0]
+        assert "created_at" not in data[0]
+        assert "updated_at" not in data[0]
         assert isinstance(data, list)
         assert len(data) == 2
 
@@ -77,6 +80,9 @@ def test_get_project():
 
         data = response.json()
 
+        assert "owner_id" not in data
+        assert "created_at" not in data
+        assert "updated_at" not in data
         assert data["id"] == 1
         assert data["title"] == "Project One"
 

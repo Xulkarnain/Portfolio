@@ -26,3 +26,16 @@ class ProjectResponse(ProjectBase):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class ProjectPublicResponse(BaseModel):
+    title: str
+    slug: str
+    short_description: str
+    detailed_description: str | None = None
+    github_url: HttpUrl | None = None
+    live_url: HttpUrl | None = None
+    is_featured: bool
+    display_order: int
+
+    model_config = ConfigDict(from_attributes=True)
