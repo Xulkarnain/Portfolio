@@ -7,3 +7,5 @@ pydantic
 pydantic-settings
 pytest
 httpx2
+ipykernel
+email-validator

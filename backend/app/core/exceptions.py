@@ -5,7 +5,7 @@ class AppException(Exception):
 class ResourceNotFoundException(AppException):
     """Raised when a requested resource does not exist."""
 
-    def __init__(self, resource: str, resource_id: int):
+    def __init__(self, resource: str, resource_id: int | str):
         self.resource = resource
         self.resource_id = resource_id
 

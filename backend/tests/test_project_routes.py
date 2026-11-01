@@ -56,11 +56,13 @@ def test_get_projects():
         assert isinstance(data, list)
         assert len(data) == 2
 
-        assert data[0]["id"] == 1
         assert data[0]["title"] == "Project One"
+        assert data[0]["slug"] == "project-one"
+        assert data[0]["display_order"] == 1
 
-        assert data[1]["id"] == 2
         assert data[1]["title"] == "Project Two"
+        assert data[1]["slug"] == "project-two"
+        assert data[1]["display_order"] == 2
 
     finally:
         app.dependency_overrides.clear()
@@ -83,8 +85,9 @@ def test_get_project():
         assert "owner_id" not in data
         assert "created_at" not in data
         assert "updated_at" not in data
-        assert data["id"] == 1
         assert data["title"] == "Project One"
+        assert data["slug"] == "project-one"
+        assert data["display_order"] == 1
 
     finally:
         app.dependency_overrides.clear()

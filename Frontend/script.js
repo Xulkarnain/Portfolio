@@ -8,7 +8,11 @@ const PortfolioApp = {
   /*=====================================================
     CONFIG
     =====================================================*/
+  config: {
+      apiBaseUrl: "http://127.0.0.1:8000/api/v1",
 
+      // Keep your existing configuration properties here
+  },
   config: {
     typingSpeed: 90,
 

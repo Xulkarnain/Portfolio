@@ -17,6 +17,7 @@ class SkillCategory(Base):
     skills: Mapped[list["Skill"]] = relationship(
         "Skill",
         back_populates="skill_category",
+        order_by="Skill.display_order",
     )
 
     name: Mapped[str] = mapped_column(

@@ -104,6 +104,7 @@ class Experience(Base):
         "Skill",
         secondary="experience_skills",
         back_populates="experiences",
+        order_by="Skill.name",
     )
 
     __table_args__ = (
