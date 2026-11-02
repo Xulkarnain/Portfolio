@@ -9,20 +9,32 @@ const PortfolioApp = {
     CONFIG
     =====================================================*/
   config: {
-      apiBaseUrl: "http://127.0.0.1:8000/api/v1",
+    // Backend API
+    apiBaseUrl: "http://127.0.0.1:8000/api/v1",
 
-      // Keep your existing configuration properties here
-  },
-  config: {
+    // Typing animation
     typingSpeed: 90,
-
     deletingSpeed: 45,
-
     delayBetweenWords: 1800,
 
+    // Scroll configuration
     scrollOffset: 100,
   },
+  api: {
+    async get(endpoint) {
+      const url = `${PortfolioApp.config.apiBaseUrl}${endpoint}`;
 
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        throw new Error(
+          `API request failed: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      return await response.json();
+    },
+  },
   /*=====================================================
     STATE
     =====================================================*/
@@ -331,8 +343,6 @@ const PortfolioApp = {
       this.counterAnimation();
 
       this.revealAnimation();
-
-      this.progressBars();
     },
 
     /*=================================================
@@ -442,25 +452,31 @@ const PortfolioApp = {
         ".section-header,.project-card,.skill-card,.timeline-item,.focus-card,.blog-card,.certificate-card,.education-card,.highlight-card,.contact-wrapper",
       );
 
-      elements.forEach((el) => el.classList.add("reveal"));
+      this.observeRevealElements(elements);
+    },
 
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add("active");
+    observeRevealElements(elements) {
+      // Create the observer only once.
+      if (!this.revealObserver) {
+        this.revealObserver = new IntersectionObserver(
+          (entries, observer) => {
+            entries.forEach((entry) => {
+              if (entry.isIntersecting) {
+                entry.target.classList.add("active");
+                observer.unobserve(entry.target);
+              }
+            });
+          },
+          {
+            threshold: 0.15,
+          },
+        );
+      }
 
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-
-        {
-          threshold: 0.15,
-        },
-      );
-
-      elements.forEach((el) => observer.observe(el));
+      elements.forEach((el) => {
+        el.classList.add("reveal");
+        this.revealObserver.observe(el);
+      });
     },
 
     /*=================================================
@@ -493,6 +509,204 @@ const PortfolioApp = {
   },
 
   /*=====================================================
+    EXPERIENCE
+    =====================================================*/
+
+  experience: {
+    init() {
+      this.loadExperiences();
+    },
+
+    async loadExperiences() {
+      const timeline = document.querySelector(".timeline");
+
+      timeline.textContent = "Loading experience...";
+
+      try {
+        const experiences = await PortfolioApp.api.get("/experiences");
+
+        this.renderExperiences(experiences);
+
+        const timelineItems = timeline.querySelectorAll(".timeline-item");
+
+        PortfolioApp.animations.observeRevealElements(timelineItems);
+      } catch (error) {
+        console.error("Unable to load experiences:", error);
+
+        timeline.textContent =
+          "Unable to load experience. Please try again later.";
+      }
+    },
+
+    renderExperiences(experiences) {
+      const timeline = document.querySelector(".timeline");
+
+      timeline.replaceChildren();
+
+      experiences.forEach((experience) => {
+        const item = this.createExperienceItem(experience);
+        timeline.appendChild(item);
+      });
+    },
+
+    createExperienceItem(experience) {
+      const item = document.createElement("article");
+      item.className = "timeline-item";
+
+      const dot = document.createElement("div");
+      dot.className = "timeline-dot";
+
+      const content = document.createElement("div");
+      content.className = "timeline-content";
+
+      // Employment duration
+      const date = document.createElement("span");
+      date.className = "timeline-date";
+      date.textContent = this.formatDuration(experience);
+
+      // Job title
+      const title = document.createElement("h3");
+      title.textContent = experience.role_title;
+
+      // Company
+      const company = document.createElement("h4");
+      company.textContent = experience.company;
+
+      // Description
+      const description = document.createElement("p");
+      description.textContent = experience.description;
+
+      // Employment details
+      const details = document.createElement("p");
+      details.className = "experience-details";
+
+      details.textContent = [experience.employment_type, experience.location]
+        .filter(Boolean)
+        .map((value) => value.charAt(0).toUpperCase() + value.slice(1))
+        .join(" · ");
+
+      // Associated technologies
+      const tech = document.createElement("div");
+      tech.className = "experience-tech";
+
+      experience.skills.forEach((skill) => {
+        const tag = document.createElement("span");
+        tag.textContent = skill.name;
+        tag.title = `Proficiency: ${skill.proficiency_level}`;
+
+        tech.appendChild(tag);
+      });
+
+      content.append(date, title, company, details, description, tech);
+
+      item.append(dot, content);
+
+      return item;
+    },
+
+    formatDuration(experience) {
+      const formatDate = (dateString) => {
+        const date = new Date(`${dateString}T00:00:00`);
+
+        return date.toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        });
+      };
+
+      const start = formatDate(experience.start_date);
+
+      const end = experience.is_current
+        ? "Present"
+        : experience.end_date
+          ? formatDate(experience.end_date)
+          : "End date unavailable";
+
+      return `${start} – ${end}`;
+    },
+  },
+
+  /*=====================================================
+    Skills
+    =====================================================*/
+
+  skills: {
+    init() {
+      this.loadSkills();
+    },
+
+    async loadSkills() {
+      const grid = document.querySelector(".skills-grid");
+
+      grid.textContent = "Loading skills...";
+
+      try {
+        const categories = await PortfolioApp.api.get("/skills");
+
+        this.renderSkills(categories);
+
+        // Find dynamically created skill cards.
+        const skillCards = grid.querySelectorAll(".skill-card");
+
+        // Apply the existing scroll-reveal animation.
+        PortfolioApp.animations.observeRevealElements(skillCards);
+      } catch (error) {
+        console.error("Unable to load skills:", error);
+
+        grid.textContent = "Unable to load skills. Please try again later.";
+      }
+    },
+
+    renderSkills(categories) {
+      const grid = document.querySelector(".skills-grid");
+
+      // Remove the old hardcoded skill cards.
+      grid.replaceChildren();
+
+      categories.forEach((category) => {
+        const card = this.createSkillCard(category);
+
+        grid.appendChild(card);
+      });
+    },
+
+    createSkillCard(category) {
+      const card = document.createElement("div");
+      card.className = "skill-card";
+
+      const heading = document.createElement("h3");
+      heading.textContent = category.name;
+
+      const tags = document.createElement("div");
+      tags.className = "tech-tags";
+
+      category.skills.forEach((skill) => {
+        const tag = document.createElement("span");
+        tag.className = "tech-tag";
+
+        const name = document.createElement("span");
+        name.className = "skill-name";
+        name.textContent = skill.name;
+
+        const proficiency = document.createElement("small");
+        proficiency.className = "skill-proficiency";
+        proficiency.textContent =
+          skill.proficiency_level.charAt(0).toUpperCase() +
+          skill.proficiency_level.slice(1);
+
+        tag.title = `${skill.name}: ${skill.proficiency_level}`;
+
+        tag.append(name, proficiency);
+        tags.appendChild(tag);
+      });
+
+      card.append(heading, tags);
+
+      return card;
+    },
+  },
+
+  /*=====================================================
     PROJECTS
     =====================================================*/
 
@@ -501,8 +715,110 @@ const PortfolioApp = {
 
     init() {
       this.filterButtons();
-
       this.searchProjects();
+      this.loadProjects();
+    },
+
+    async loadProjects() {
+      const grid = document.querySelector(".project-grid");
+
+      grid.textContent = "Loading projects...";
+
+      try {
+        const projects = await PortfolioApp.api.get("/projects");
+
+        this.renderProjects(projects);
+
+        // Refresh the cached cards after dynamic rendering.
+        PortfolioApp.dom.projectCards = [
+          ...grid.querySelectorAll(".project-card"),
+        ];
+        // Apply scroll-reveal animation to dynamically created cards.
+        PortfolioApp.animations.observeRevealElements(
+          PortfolioApp.dom.projectCards,
+        );
+        // Apply the currently selected filter and search.
+        this.filterProjects();
+      } catch (error) {
+        console.error("Unable to load projects:", error);
+
+        grid.textContent = "Unable to load projects. Please try again later.";
+      }
+    },
+
+    renderProjects(projects) {
+      const grid = document.querySelector(".project-grid");
+
+      // Remove existing hardcoded project cards.
+      grid.replaceChildren();
+
+      projects.forEach((project) => {
+        const card = this.createProjectCard(project);
+        grid.appendChild(card);
+      });
+    },
+
+    createProjectCard(project) {
+      const card = document.createElement("article");
+      card.className = "project-card";
+
+      // Categories are used by the existing category filters.
+      card.dataset.category = project.categories.join(" ");
+
+      const content = document.createElement("div");
+      content.className = "project-content";
+
+      const type = document.createElement("span");
+      type.className = "project-type";
+      type.textContent = project.categories.join(" / ").toUpperCase();
+
+      const title = document.createElement("h3");
+      title.textContent = project.title;
+
+      const description = document.createElement("p");
+      description.textContent = project.short_description;
+
+      const tech = document.createElement("div");
+      tech.className = "project-tech";
+
+      project.skills.forEach((skill) => {
+        const tag = document.createElement("span");
+        tag.textContent = skill.name;
+        tech.appendChild(tag);
+      });
+
+      const links = document.createElement("div");
+      links.className = "project-links";
+
+      if (project.github_url) {
+        const githubLink = document.createElement("a");
+        githubLink.href = project.github_url;
+        githubLink.textContent = "GitHub";
+        githubLink.target = "_blank";
+        githubLink.rel = "noopener noreferrer";
+
+        links.appendChild(githubLink);
+      }
+
+      if (project.live_url) {
+        const liveLink = document.createElement("a");
+        liveLink.href = project.live_url;
+        liveLink.textContent = "Live Demo";
+        liveLink.target = "_blank";
+        liveLink.rel = "noopener noreferrer";
+
+        links.appendChild(liveLink);
+      }
+
+      content.append(type, title, description, tech);
+
+      if (links.children.length > 0) {
+        content.appendChild(links);
+      }
+
+      card.appendChild(content);
+
+      return card;
     },
 
     filterButtons() {
@@ -522,35 +838,29 @@ const PortfolioApp = {
     },
 
     searchProjects() {
-      PortfolioApp.dom.projectSearch.addEventListener(
-        "input",
-
-        () => this.filterProjects(),
+      PortfolioApp.dom.projectSearch.addEventListener("input", () =>
+        this.filterProjects(),
       );
     },
 
     filterProjects() {
-      const keyword = PortfolioApp.dom.projectSearch.value
-
-        .toLowerCase()
-
-        .trim();
+      const keyword = PortfolioApp.dom.projectSearch.value.toLowerCase().trim();
 
       let visibleProjects = 0;
 
       PortfolioApp.dom.projectCards.forEach((card) => {
-        const category = card.dataset.category;
+        const categories = card.dataset.category.split(/\s+/);
 
         const content = card.textContent.toLowerCase();
 
         const categoryMatch =
-          this.currentFilter === "all" || category.includes(this.currentFilter);
+          this.currentFilter === "all" ||
+          categories.includes(this.currentFilter);
 
         const keywordMatch = content.includes(keyword);
 
         if (categoryMatch && keywordMatch) {
           visibleProjects++;
-
           card.classList.remove("hide");
         } else {
           card.classList.add("hide");
@@ -565,29 +875,337 @@ const PortfolioApp = {
 
       if (!empty) {
         empty = document.createElement("div");
-
         empty.className = "empty-projects";
 
-        empty.innerHTML = `
+        const heading = document.createElement("h3");
+        heading.textContent = "No Projects Found";
 
-                    <h3>No Projects Found</h3>
+        const message = document.createElement("p");
+        message.textContent = "Try another keyword or category.";
 
-                    <p>
+        empty.append(heading, message);
 
-                        Try another keyword or category.
-
-                    </p>
-
-                `;
-
-        document
-
-          .querySelector(".project-grid")
-
-          .after(empty);
+        document.querySelector(".project-grid").after(empty);
       }
 
       empty.style.display = count === 0 ? "block" : "none";
+    },
+  },
+
+  /*=====================================================
+    Education
+    =====================================================*/
+
+  education: {
+    init() {
+      this.loadEducation();
+    },
+
+    async loadEducation() {
+      const container = document.querySelector(".education-card");
+
+      container.textContent = "Loading education...";
+
+      try {
+        const records = await PortfolioApp.api.get("/education");
+
+        this.renderEducation(records);
+
+        PortfolioApp.animations.observeRevealElements([container]);
+      } catch (error) {
+        console.error("Unable to load education:", error);
+
+        container.textContent =
+          "Unable to load education. Please try again later.";
+      }
+    },
+
+    renderEducation(records) {
+      const container = document.querySelector(".education-card");
+
+      container.replaceChildren();
+
+      records.forEach((record) => {
+        const icon = document.createElement("div");
+        icon.className = "education-icon";
+
+        const iconElement = document.createElement("i");
+        iconElement.className = "fas fa-graduation-cap";
+
+        icon.appendChild(iconElement);
+
+        const content = document.createElement("div");
+        content.className = "education-content";
+
+        const degree = document.createElement("h3");
+        degree.textContent = record.degree;
+
+        const field = document.createElement("h4");
+        field.textContent = record.field_of_study;
+
+        const institution = document.createElement("p");
+        institution.textContent = record.institution;
+
+        const duration = document.createElement("span");
+        duration.className = "education-duration";
+        duration.textContent = this.formatDuration(record);
+
+        content.append(degree, field, institution, duration);
+
+        if (record.grade) {
+          const grade = document.createElement("p");
+          grade.textContent = `Grade: ${record.grade}`;
+          content.appendChild(grade);
+        }
+
+        if (record.description) {
+          const description = document.createElement("p");
+          description.textContent = record.description;
+          content.appendChild(description);
+        }
+
+        container.append(icon, content);
+      });
+    },
+
+    formatDuration(record) {
+      const formatDate = (dateString) => {
+        const date = new Date(`${dateString}T00:00:00`);
+
+        return date.toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        });
+      };
+
+      return `${formatDate(record.start_date)} – Expected Graduation ${formatDate(record.end_date)}`;
+    },
+  },
+
+  /*=====================================================
+    CERTIFICATES
+    =====================================================*/
+
+  certifications: {
+    init() {
+      this.loadCertifications();
+    },
+
+    async loadCertifications() {
+      const grid = document.querySelector(".certificate-grid");
+
+      grid.textContent = "Loading certifications...";
+
+      try {
+        const certifications = await PortfolioApp.api.get("/certifications");
+
+        this.renderCertifications(certifications);
+
+        const cards = grid.querySelectorAll(".certificate-card");
+
+        PortfolioApp.animations.observeRevealElements(cards);
+      } catch (error) {
+        console.error("Unable to load certifications:", error);
+
+        grid.textContent =
+          "Unable to load certifications. Please try again later.";
+      }
+    },
+
+    renderCertifications(certifications) {
+      const grid = document.querySelector(".certificate-grid");
+
+      grid.replaceChildren();
+
+      certifications.forEach((certification) => {
+        const card = this.createCertificateCard(certification);
+
+        grid.appendChild(card);
+      });
+    },
+
+    createCertificateCard(certification) {
+      const card = document.createElement("article");
+      card.className = "certificate-card";
+
+      const icon = document.createElement("i");
+      icon.className = "fas fa-award";
+
+      const title = document.createElement("h3");
+      title.textContent = certification.title;
+
+      const organization = document.createElement("p");
+      organization.className = "certificate-issuer";
+      organization.textContent = certification.issuing_organization;
+
+      const description = document.createElement("p");
+      description.textContent = certification.description;
+
+      const date = document.createElement("span");
+      date.className = "certificate-date";
+      date.textContent = certification.issue_date
+        ? `Issued ${this.formatDate(certification.issue_date)}`
+        : "Issue date unavailable";
+
+      card.append(icon, title, organization, description, date);
+
+      if (certification.credential_url) {
+        const link = document.createElement("a");
+
+        link.href = certification.credential_url;
+        link.textContent = "View Credential";
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+
+        card.appendChild(link);
+      }
+
+      return card;
+    },
+
+    formatDate(dateString) {
+      const date = new Date(`${dateString}T00:00:00`);
+
+      return date.toLocaleDateString("en-US", {
+        month: "long",
+        year: "numeric",
+      });
+    },
+  },
+
+  /*=====================================================
+    BLOG
+    =====================================================*/
+
+  blog: {
+    allPosts: [],
+    searchKeyword: "",
+    defaultLimit: 3,
+
+    init() {
+      this.loadPosts();
+      this.setupSearch();
+    },
+
+    async loadPosts() {
+      const grid = document.querySelector(".blog-grid");
+
+      grid.textContent = "Loading articles...";
+
+      try {
+        const posts = await PortfolioApp.api.get("/blog");
+
+        // Store all published articles.
+        this.allPosts = posts;
+
+        // Sort newest first.
+        this.allPosts.sort((a, b) => {
+          return new Date(b.published_at) - new Date(a.published_at);
+        });
+
+        this.renderPosts();
+      } catch (error) {
+        console.error("Unable to load blog posts:", error);
+
+        grid.textContent = "Unable to load articles. Please try again later.";
+      }
+    },
+
+    setupSearch() {
+      const searchInput = document.getElementById("blog-search");
+
+      if (!searchInput) return;
+
+      searchInput.addEventListener("input", () => {
+        this.searchKeyword = searchInput.value.toLowerCase().trim();
+
+        this.renderPosts();
+      });
+    },
+
+    renderPosts() {
+      const grid = document.querySelector(".blog-grid");
+      const resultsInfo = document.querySelector(".blog-results-info");
+
+      grid.replaceChildren();
+
+      let postsToDisplay;
+
+      if (this.searchKeyword) {
+        // Search across ALL published articles.
+        postsToDisplay = this.allPosts.filter((post) => {
+          const searchableText = [post.title, post.excerpt, post.source]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+          return searchableText.includes(this.searchKeyword);
+        });
+
+        resultsInfo.textContent = `${postsToDisplay.length} article(s) found`;
+      } else {
+        // Show only the latest three by default.
+        postsToDisplay = this.allPosts.slice(0, this.defaultLimit);
+
+        resultsInfo.textContent = `Showing latest ${postsToDisplay.length} article(s)`;
+      }
+
+      if (postsToDisplay.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "blog-empty";
+        empty.textContent = "No articles found. Try another keyword.";
+
+        grid.appendChild(empty);
+        return;
+      }
+
+      postsToDisplay.forEach((post) => {
+        const card = this.createPostCard(post);
+        grid.appendChild(card);
+      });
+
+      // Apply animations to newly generated cards.
+      PortfolioApp.animations.observeRevealElements(
+        grid.querySelectorAll(".blog-card"),
+      );
+    },
+
+    createPostCard(post) {
+      const card = document.createElement("article");
+      card.className = "blog-card";
+
+      const category = document.createElement("span");
+      category.textContent = post.source;
+
+      const title = document.createElement("h3");
+      title.textContent = post.title;
+
+      const excerpt = document.createElement("p");
+      excerpt.textContent = post.excerpt;
+
+      const date = document.createElement("small");
+      date.className = "blog-date";
+      date.textContent = this.formatDate(post.published_at);
+
+      const link = document.createElement("a");
+      link.href = `blog.html?slug=${encodeURIComponent(post.slug)}`;
+      link.textContent = "Read Article";
+
+      card.append(category, title, excerpt, date, link);
+
+      return card;
+    },
+
+    formatDate(dateString) {
+      if (!dateString) return "Publication date unavailable";
+
+      const date = new Date(dateString);
+
+      return date.toLocaleDateString("en-US", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
     },
   },
 
@@ -611,63 +1229,53 @@ const PortfolioApp = {
         e.preventDefault();
 
         const submitButton = form.querySelector("button");
-
         const originalText = submitButton.textContent;
 
         submitButton.disabled = true;
-
         submitButton.textContent = "Sending...";
 
         try {
           const data = {
-            name: form.name.value.trim(),
-
-            email: form.email.value.trim(),
-
-            subject: form.subject.value.trim(),
-
-            message: form.message.value.trim(),
+            visitor_name: form.elements.namedItem("name").value.trim(),
+            email: form.elements.namedItem("email").value.trim(),
+            subject: form.elements.namedItem("subject").value.trim(),
+            message: form.elements.namedItem("message").value.trim(),
           };
 
-          if (!data.name || !data.email || !data.message) {
+          if (!data.visitor_name || !data.email || !data.message) {
             throw new Error("Please fill all required fields.");
           }
 
-          /*
-                    FASTAPI ENDPOINT
-
-                    await fetch("/api/contact",{
-
-                        method:"POST",
-
-                        headers:{
-                            "Content-Type":"application/json"
-                        },
-
-                        body:JSON.stringify(data)
-
-                    });
-
-                    */
-
-          await new Promise((resolve) => setTimeout(resolve, 1200));
-
-          this.toast(
-            "Message sent successfully!",
-
-            "success",
+          const response = await fetch(
+            `${PortfolioApp.config.apiBaseUrl}/contact`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(data),
+            },
           );
+
+          const result = await response.json();
+
+          if (!response.ok) {
+            const errorMessage = Array.isArray(result.detail)
+              ? result.detail.map((error) => error.msg).join(", ")
+              : result.detail || "Unable to send your message.";
+
+            throw new Error(errorMessage);
+          }
+
+          this.toast(result.message || "Message sent successfully!", "success");
 
           form.reset();
         } catch (error) {
-          this.toast(
-            error.message,
+          console.error("Contact form error:", error);
 
-            "error",
-          );
+          this.toast(error.message, "error");
         } finally {
           submitButton.disabled = false;
-
           submitButton.textContent = originalText;
         }
       });
@@ -744,6 +1352,20 @@ const PortfolioApp = {
     this.projects.init();
 
     this.contact.init();
+
+    this.projects.init();
+
+    this.skills.init();
+
+    this.contact.init();
+
+    this.experience.init();
+
+    this.education.init();
+
+    this.certifications.init();
+
+    this.blog.init();
 
     console.log("Portfolio initialized.");
   },

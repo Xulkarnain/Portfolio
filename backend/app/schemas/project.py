@@ -28,14 +28,22 @@ class ProjectResponse(ProjectBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+from app.schemas.skill import SkillPublicResponse
+
+
 class ProjectPublicResponse(BaseModel):
     title: str
     slug: str
     short_description: str
     detailed_description: str | None = None
+
     github_url: HttpUrl | None = None
     live_url: HttpUrl | None = None
+
     is_featured: bool
     display_order: int
+
+    categories: list[str] = Field(default_factory=list)
+    skills: list[SkillPublicResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)

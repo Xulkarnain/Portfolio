@@ -1,5 +1,6 @@
 from datetime import datetime
 
+
 from sqlalchemy import BigInteger, Boolean, ForeignKey, Integer, String, Text, func , DateTime
 from sqlalchemy.orm import Mapped, mapped_column , relationship
 
@@ -92,3 +93,16 @@ class Project(Base):
         secondary="project_skills",
         back_populates="projects",
     )
+
+    category_assignments: Mapped[list["ProjectCategory"]] = relationship(
+        "ProjectCategory",
+        back_populates="project",
+        cascade="all, delete-orphan",
+    )
+
+    @property
+    def categories(self) -> list[str]:
+        return [
+            assignment.category
+            for assignment in self.category_assignments
+        ]   

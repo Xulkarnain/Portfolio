@@ -89,7 +89,14 @@
 
           <a href="#resume" class="resume-btn"> Resume </a>
 
-          <button id="menu-toggle" class="menu-toggle">
+          <button
+            id="menu-toggle"
+            class="menu-toggle"
+            type="button"
+            aria-label="Open navigation menu"
+            aria-expanded="false"
+            aria-controls="mobile-menu"
+          >
             <i class="fas fa-bars"></i>
           </button>
         </div>
@@ -163,7 +170,7 @@
 
           <div class="hero-right">
             <div class="profile-card">
-              <img src="pfp.jpeg" alt="Zulkarnain" />
+              <img src="pfp.webp" alt="Zulkarnain" />
 
               <div class="status">
                 <span class="status-dot"></span>
@@ -946,7 +953,16 @@ BLOG
 
             <p>I enjoy documenting what I learn while building AI systems.</p>
           </div>
+          <div class="blog-search">
+            <input
+              type="search"
+              id="blog-search"
+              placeholder="Search articles by title or topic..."
+              aria-label="Search blog articles"
+            />
+          </div>
 
+          <p class="blog-results-info" aria-live="polite"></p>
           <div class="blog-grid">
             <article class="blog-card">
               <span> Machine Learning </span>
