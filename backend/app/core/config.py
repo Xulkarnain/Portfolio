@@ -3,7 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     app_name: str = "Portfolio API"
-    environment: str = "development"
+    environment: str = "production"
     debug: bool = False
 
     database_url: str
