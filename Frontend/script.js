@@ -9,8 +9,8 @@ const PortfolioApp = {
     CONFIG
     =====================================================*/
   config: {
-    // Backend API
-    apiBaseUrl: "http://127.0.0.1:8000/api/v1",
+    apiBaseUrl: "https://portfolio-43fm.onrender.com/api/v1",
+    // other settings
 
     // Typing animation
     typingSpeed: 90,
