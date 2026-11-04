@@ -7,6 +7,8 @@ class Settings(BaseSettings):
     debug: bool = False
 
     database_url: str
+    resend_api_key: str
+    contact_notification_email: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
