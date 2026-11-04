@@ -35,6 +35,8 @@ def send_contact_notification(
         headers={
             "Authorization": f"Bearer {settings.resend_api_key}",
             "Content-Type": "application/json",
+            "Accept": "application/json",
+            "User-Agent": "portfolio-contact-service/1.0",
         },
         method="POST",
     )
