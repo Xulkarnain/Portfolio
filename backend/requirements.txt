@@ -9,3 +9,6 @@ pytest
 httpx2
 ipykernel
 email-validator
+pwdlib[argon2]
+PyJWT
+httpx

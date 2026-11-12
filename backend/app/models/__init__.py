@@ -13,6 +13,7 @@ from app.models.visitor_log import VisitorLog
 from app.models.sync_log import SyncLog
 from app.models.experience_skill import ExperienceSkill
 from app.models.project_category import ProjectCategory
+from app.models.admin_user import AdminUser
 __all__ = [
     "User",
     "Project",
@@ -29,4 +30,5 @@ __all__ = [
     "SyncLog",
     "ExperienceSkill",
     "ProjectCategory",
+    "AdminUser",
 ]

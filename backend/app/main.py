@@ -9,6 +9,8 @@ from app.core.exceptions import ResourceNotFoundException
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 
 # CORS configuration for local frontend development
+
+# CORS configuration
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -16,10 +18,22 @@ app.add_middleware(
         "http://localhost:5500",
         "https://zulkarnain.vercel.app",
     ],
-    allow_credentials=False,
-    allow_methods=["GET", "POST", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization"],
+    allow_credentials=True,
+    allow_methods=[
+        "GET",
+        "POST",
+        "PUT",
+        "PATCH",
+        "DELETE",
+        "OPTIONS",
+    ],
+    allow_headers=[
+        "Content-Type",
+        "Authorization",
+        "X-CSRF-Token",
+    ],
 )
+
 
 
 @app.exception_handler(ResourceNotFoundException)

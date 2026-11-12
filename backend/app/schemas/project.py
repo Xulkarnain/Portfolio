@@ -47,3 +47,18 @@ class ProjectPublicResponse(BaseModel):
     skills: list[SkillPublicResponse] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
+
+
+from typing import Literal
+
+
+
+
+class AdminProjectCreate(ProjectBase):
+    categories: list[Literal["ai", "backend", "data"]] = Field(
+        default_factory=list
+    )
+
+    skill_ids: list[int] = Field(
+        default_factory=list
+    )

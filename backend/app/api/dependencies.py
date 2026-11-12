@@ -1,6 +1,14 @@
+from app.repositories.admin import AdminRepository
+from app.services.auth import AuthService
 from fastapi import Depends
 from sqlalchemy.orm import Session
-
+from fastapi import Cookie, HTTPException, status
+from fastapi import Header
+from app.core.security import verify_csrf_token
+import hmac
+from fastapi import Request
+from app.core.security import decode_access_token
+from app.models.admin_user import AdminUser
 from app.database.dependencies import get_db
 from app.repositories.project import ProjectRepository
 from app.services.project import ProjectService
@@ -92,3 +100,103 @@ def get_contact_service(
     repository: ContactRepository = Depends(get_contact_repository),
 ) -> ContactService:
     return ContactService(repository)
+
+def get_auth_service(
+    db: Session = Depends(get_db),
+) -> AuthService:
+    repository = AdminRepository(db)
+    return AuthService(repository)
+
+def get_current_admin(
+    token: str | None = Cookie(default=None, alias="admin_access_token"),
+    db: Session = Depends(get_db),
+) -> AdminUser:
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+        )
+
+    payload = decode_access_token(token)
+
+    if payload is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired authentication token",
+        )
+
+    try:
+        admin_id = int(payload.get("sub"))
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid authentication token",
+        )
+
+    admin_repository = AdminRepository(db)
+    admin = admin_repository.get_by_id(admin_id)
+
+    if admin is None or not admin.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin account is unavailable",
+        )
+
+    return admin
+
+def require_csrf_token(
+    access_token: str | None = Cookie(
+        default=None,
+        alias="admin_access_token",
+    ),
+    csrf_cookie: str | None = Cookie(
+        default=None,
+        alias="admin_csrf_token",
+    ),
+    csrf_header: str | None = Header(
+        default=None,
+        alias="X-CSRF-Token",
+    ),
+) -> None:
+
+    if not access_token or not csrf_cookie or not csrf_header:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CSRF token missing",
+        )
+
+    if not hmac.compare_digest(csrf_cookie, csrf_header):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="CSRF token mismatch",
+        )
+
+    if not verify_csrf_token(access_token, csrf_cookie):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid CSRF token",
+        )
+
+ALLOWED_ADMIN_ORIGINS = {
+    "http://localhost:5500",
+    "http://127.0.0.1:5500",
+    "https://zulkarnain.vercel.app",
+}
+
+
+def require_admin_origin(request: Request) -> None:
+    origin = request.headers.get("origin")
+
+    if origin not in ALLOWED_ADMIN_ORIGINS:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Untrusted request origin",
+        )
+
+def require_admin_mutation_security(
+    _: AdminUser = Depends(get_current_admin),
+    __: None = Depends(require_admin_origin),
+    ___: None = Depends(require_csrf_token),
+) -> None:
+    pass
