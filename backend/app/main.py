@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.router import api_router
 from app.core.config import settings
-from app.core.exceptions import ResourceNotFoundException
+from app.core.exceptions import DuplicateResourceException, InvalidInputException, InvalidReferenceException, PortfolioOwnerNotFoundException, ResourceNotFoundException
 
 app = FastAPI(title=settings.app_name, debug=settings.debug)
 
@@ -47,3 +47,31 @@ app.include_router(api_router)
 @app.get("/")
 def root():
     return {"message": "Portfolio API is running"}
+
+@app.exception_handler(DuplicateResourceException)
+async def duplicate_resource_handler(request: Request, exc):
+    return JSONResponse(
+        status_code=409,
+        content={"detail": str(exc)},
+    )
+
+@app.exception_handler(InvalidReferenceException)
+async def invalid_reference_handler(request: Request, exc):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": str(exc)},
+    )
+
+@app.exception_handler(InvalidInputException)
+async def invalid_input_handler(request: Request, exc):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": str(exc)},
+    )
+
+@app.exception_handler(PortfolioOwnerNotFoundException)
+async def portfolio_owner_not_found_handler(request: Request, exc):
+    return JSONResponse(
+        status_code=409,
+        content={"detail": str(exc)},
+    )

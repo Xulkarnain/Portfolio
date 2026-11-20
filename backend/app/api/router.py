@@ -1,8 +1,17 @@
+
 from fastapi import APIRouter
 
-from app.api.routes import health, projects , skills , experiences , education , certifications , blog , contact 
-from app.api.routes.admin import auth
-
+from app.api.routes import (
+    health,
+    projects,
+    skills,
+    experiences,
+    education,
+    certifications,
+    blog,
+    contact,
+)
+from app.api.routes.admin import auth, projects as admin_projects
 
 
 api_router = APIRouter(prefix="/api/v1")
@@ -15,4 +24,6 @@ api_router.include_router(education.router)
 api_router.include_router(certifications.router)
 api_router.include_router(blog.router)
 api_router.include_router(contact.router)
+
 api_router.include_router(auth.router)
+api_router.include_router(admin_projects.router)

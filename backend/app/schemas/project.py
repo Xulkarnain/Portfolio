@@ -62,3 +62,15 @@ class AdminProjectCreate(ProjectBase):
     skill_ids: list[int] = Field(
         default_factory=list
     )
+
+
+class AdminProjectResponse(ProjectBase):
+    id: int
+    owner_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    categories: list[str] = Field(default_factory=list)
+    skills: list[SkillPublicResponse] = Field(default_factory=list)
+
+    model_config = ConfigDict(from_attributes=True)
