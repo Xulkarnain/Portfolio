@@ -42,9 +42,8 @@ def test_get_published_projects():
 
         projects = repository.get_published_projects()
 
-        assert len(projects) == 4
-
-        assert [project.id for project in projects] == [1, 2, 3, 4]
+        assert len(projects) == 5
+        assert [project.id for project in projects] == [1, 2, 3, 4, 9]
         assert all(project.is_published for project in projects)
 
     finally:

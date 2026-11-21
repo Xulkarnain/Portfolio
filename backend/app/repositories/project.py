@@ -34,6 +34,23 @@ class ProjectRepository:
 
         return list(self.db.scalars(statement).all())
 
+
+    def get_all_projects(self) -> list[Project]:
+        statement = (
+            select(Project)
+            .options(
+                selectinload(Project.skills),
+                selectinload(Project.category_assignments),
+            )
+            .order_by(
+                Project.display_order,
+                Project.id,
+            )
+        )
+
+        return list(self.db.scalars(statement).all())
+
+
     def get_portfolio_owner(self) -> User | None:
         statement = select(User).order_by(User.id)
         users = list(self.db.scalars(statement).all())
@@ -70,6 +87,30 @@ class ProjectRepository:
         )
 
         self.db.add(project)
+        self.db.flush()
+
+        return project
+
+    def update(
+        self,
+        project: Project,
+        project_data: dict,
+        skills: list[Skill],
+        categories: list[str],
+    ) -> Project:
+        # Update ordinary project columns.
+        for field, value in project_data.items():
+            setattr(project, field, value)
+
+        # Replace existing skill relationships.
+        project.skills = skills
+
+        # Replace existing category relationships.
+        project.category_assignments = [
+            ProjectCategory(category=category)
+            for category in categories
+        ]
+
         self.db.flush()
 
         return project

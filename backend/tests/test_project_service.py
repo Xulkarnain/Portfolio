@@ -10,7 +10,24 @@ class FakeProjectRepository:
             "project-1",
             "project-2",
         ]
+    def get_all_projects(self):
+        return [
+            "project-1",
+            "project-2",
+            "draft-project",
+        ]
+    def update(self, project, project_data, skills, categories):
+        for field, value in project_data.items():
+            setattr(project, field, value)
 
+        project.skills = skills
+        project.categories = categories
+
+        self.updated_project = project
+
+
+
+       
     def get_by_id(self, project_id: int):
         if project_id == 1:
             return "project-1"
@@ -83,7 +100,7 @@ class FakeProjectCreationRepository:
         self.existing_project = None
         self.created_data = None
         self.created_project = None
-
+        self.updated_project = None
     def get_portfolio_owner(self):
         return self.owner
 
@@ -114,7 +131,36 @@ class FakeProjectCreationRepository:
             return self.created_project
 
         return None
+    def update(self, project, project_data, skills, categories):
+        for field, value in project_data.items():
+            setattr(project, field, value)
 
+        project.skills = skills
+        project.categories = categories
+
+        self.updated_project = project
+
+        return project
+
+    def make_project_update_data(**overrides):
+        data = {
+            "title": "Updated AI Recommendation Engine",
+            "slug": "updated-ai-recommendation-engine",
+            "short_description": "Updated project description",
+            "detailed_description": "Updated detailed description",
+            "github_url": "https://github.com/example/updated-project",
+            "live_url": None,
+            "is_featured": True,
+            "is_published": True,
+            "display_order": 2,
+            "categories": ["ai", "data"],
+            "skill_ids": [10, 20],
+        }
+
+        data.update(overrides)
+
+        from app.schemas.project import AdminProjectUpdate
+        return AdminProjectUpdate(**data)
 
 def make_project_data(**overrides):
     data = {
@@ -199,3 +245,92 @@ def test_create_project_without_portfolio_owner():
     assert repository.db.rolled_back is True
     assert repository.db.committed is False
     assert repository.created_project is None
+
+def test_get_all_projects():
+    repository = FakeProjectRepository()
+    service = ProjectService(repository)
+
+    projects = service.get_all_projects()
+
+    assert projects == [
+        "project-1",
+        "project-2",
+        "draft-project",
+    ]
+def make_project_update_data(**overrides):
+    data = {
+        "title": "Updated AI Recommendation Engine",
+        "slug": "updated-ai-recommendation-engine",
+        "short_description": "Updated project description",
+        "detailed_description": "Updated detailed description",
+        "github_url": "https://github.com/example/updated-project",
+        "live_url": None,
+        "is_featured": True,
+        "is_published": True,
+        "display_order": 2,
+        "categories": ["ai", "data"],
+        "skill_ids": [10, 20],
+    }
+
+    data.update(overrides)
+
+    from app.schemas.project import AdminProjectUpdate
+    return AdminProjectUpdate(**data)
+def test_update_project_success():
+    repository = FakeProjectCreationRepository()
+
+    existing_project = SimpleNamespace(
+        id=101,
+        title="Old Project",
+        slug="old-project",
+        skills=[],
+        categories=[],
+    )
+
+    repository.get_by_id = lambda project_id: (
+        existing_project if project_id == 101 else None
+    )
+
+    service = ProjectService(repository)
+
+    updated_project = service.update_project(
+        101,
+        make_project_update_data(),
+    )
+
+    assert updated_project.title == "Updated AI Recommendation Engine"
+    assert updated_project.slug == "updated-ai-recommendation-engine"
+    assert updated_project.is_featured is True
+    assert updated_project.is_published is True
+    assert updated_project.categories == ["ai", "data"]
+    assert [skill.id for skill in updated_project.skills] == [10, 20]
+
+    assert repository.db.committed is True
+    assert repository.db.rolled_back is False
+
+
+def test_update_project_duplicate_slug():
+    repository = FakeProjectCreationRepository()
+
+    existing_project = SimpleNamespace(
+        id=101,
+        title="Old Project",
+        slug="old-project",
+        skills=[],
+        categories=[],
+    )
+
+    repository.get_by_id = lambda project_id: existing_project
+
+    repository.existing_project = SimpleNamespace(id=202)
+
+    service = ProjectService(repository)
+
+    with pytest.raises(DuplicateResourceException):
+        service.update_project(
+            101,
+            make_project_update_data(),
+        )
+
+    assert repository.db.rolled_back is True
+    assert repository.db.committed is False

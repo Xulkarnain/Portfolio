@@ -64,6 +64,22 @@ class AdminProjectCreate(ProjectBase):
     )
 
 
+class AdminProjectUpdate(BaseModel):
+    title: str = Field(min_length=1, max_length=150)
+    slug: str = Field(min_length=1, max_length=180)
+    short_description: str = Field(min_length=1, max_length=300)
+
+    detailed_description: str | None
+    github_url: HttpUrl | None
+    live_url: HttpUrl | None
+
+    is_featured: bool
+    is_published: bool
+    display_order: int
+
+    categories: list[Literal["ai", "backend", "data"]]
+    skill_ids: list[int]
+
 class AdminProjectResponse(ProjectBase):
     id: int
     owner_id: int
